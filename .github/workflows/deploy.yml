@@ -20,7 +20,8 @@ jobs:
 
       - name: Deploy to Server
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          # Conecta ao servidor, ignorando a verificação de host, e executa os comandos de deploy
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
             echo "Conectado ao servidor! Iniciando deploy..."
             cd ${{ secrets.DEPLOY_PATH }}
             
