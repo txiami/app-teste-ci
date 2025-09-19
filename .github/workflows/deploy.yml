@@ -1,45 +1,29 @@
-name: Deploy to Production Server
+name: Debug SSH Connection
 
-# Aciona o workflow em cada push para a branch 'main'
 on:
   push:
     branches:
       - main
 
 jobs:
-  deploy:
+  debug-ssh:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Faz o checkout do código do repositório
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # 2. Configura a chave SSH para acesso ao servidor
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      # 3. Executa os comandos de deploy no servidor
-      - name: Deploy to Server
+      - name: Test SSH Connection
         run: |
-          # Adiciona o host do servidor aos hosts conhecidos para evitar prompts de confirmação
+          echo "Adicionando host ao known_hosts..."
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
           
-          # Conecta ao servidor e executa os comandos de deploy
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
-            
-            # Instala dependências do Composer em modo de produção
-            composer install --no-dev --optimize-autoloader
-            
-            # Ajusta as permissões
-            sudo chown -R www-data:www-data .
-            sudo chmod -R 755 .
-            sudo chmod -R 777 writable
-            
-            # Limpa o cache do CodeIgniter (Opcional, mas recomendado)
-            php spark cache:clear
+          echo "Tentando conectar e listar arquivos..."
+          ssh -T ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+            echo "Conexão bem-sucedida! Estou no diretório:"
+            pwd
+            echo "Listando arquivos:"
+            ls -la
           EOF
