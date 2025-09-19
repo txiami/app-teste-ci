@@ -1,4 +1,4 @@
-name: Debug SSH Connection
+name: Deploy to Production Server
 
 on:
   push:
@@ -6,24 +6,41 @@ on:
       - main
 
 jobs:
-  debug-ssh:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Test SSH Connection
+      - name: Deploy to Server
         run: |
-          echo "Adicionando host ao known_hosts..."
+          # Adiciona o host do servidor aos hosts conhecidos
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
           
-          echo "Tentando conectar e listar arquivos..."
-          ssh -T ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-            echo "Conexão bem-sucedida! Estou no diretório:"
-            pwd
-            echo "Listando arquivos:"
-            ls -la
+          # Conecta ao servidor e executa os comandos de deploy
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+            echo "Conectado ao servidor! Iniciando deploy..."
+            cd ${{ secrets.DEPLOY_PATH }}
+            
+            echo "Baixando atualizações do Git..."
+            git pull origin main
+            
+            echo "Instalando dependências do Composer..."
+            composer install --no-dev --optimize-autoloader
+            
+            echo "Ajustando permissões..."
+            sudo chown -R www-data:www-data .
+            sudo chmod -R 755 .
+            sudo chmod -R 777 writable
+            
+            echo "Limpando cache do CodeIgniter..."
+            php spark cache:clear
+            
+            echo "Deploy finalizado com sucesso!"
           EOF
