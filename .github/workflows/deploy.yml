@@ -28,16 +28,14 @@ jobs:
             echo "Conectado ao servidor! Iniciando deploy..."
             cd ${{ secrets.DEPLOY_PATH }}
             
+            # Garante que o Git confia no diretório (medida de segurança)
+            git config --global --add safe.directory ${{ secrets.DEPLOY_PATH }}
+            
             echo "Baixando atualizações do Git..."
             git pull origin main
             
             echo "Instalando dependências do Composer..."
             composer install --no-dev --optimize-autoloader
-            
-            echo "Ajustando permissões..."
-            sudo chown -R www-data:www-data .
-            sudo chmod -R 755 .
-            sudo chmod -R 777 writable
             
             echo "Limpando cache do CodeIgniter..."
             php spark cache:clear
