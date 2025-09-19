@@ -20,19 +20,16 @@ jobs:
 
       - name: Deploy to Server
         run: |
-          # Adiciona o host do servidor aos hosts conhecidos
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
-          
-          # Conecta ao servidor e executa os comandos de deploy
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
             echo "Conectado ao servidor! Iniciando deploy..."
             cd ${{ secrets.DEPLOY_PATH }}
             
-            # Garante que o Git confia no diretório (medida de segurança)
+            # Garante que o Git confia no diretório
             git config --global --add safe.directory ${{ secrets.DEPLOY_PATH }}
             
-            echo "Baixando atualizações do Git..."
-            git pull origin main
+            echo "Forçando a atualização com o repositório..."
+            git fetch --all
+            git reset --hard origin/main
             
             echo "Instalando dependências do Composer..."
             composer install --no-dev --optimize-autoloader
